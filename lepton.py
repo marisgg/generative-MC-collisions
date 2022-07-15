@@ -170,6 +170,7 @@ data = np.zeros((Neve, 8))
 while jj < Neve:
     # random costheta
     costh_ii = -1 + random.random() * delta
+    costh_ii = np.cos(np.arccos(costh_ii) + np.random.normal(1, 0.1))
     # calc. phase space point
     w_ii = dsigma(costh_ii) * delta
     # now divide by maximum and compare to probability
@@ -181,13 +182,14 @@ while jj < Neve:
         # here we create the four-vectors of the hard process particles
         # generate random phi
         phi = random.random() * 2 * math.pi
+        phi += np.random.normal(1, 0.1)
         sinphi = math.sin(phi)
         cosphi = math.cos(phi)
         sinth = math.sqrt( 1 - costh_ii**2 )
         pem = [ 0.5 * ECM, 0., 0., 0.5 * ECM ]
         pep = [ 0.5 * ECM, 0., 0., - 0.5 * ECM ]
-        pmm = [ 0.5 * ECM, 0.5 * ECM * sinth * cosphi, 0.5 * ECM * sinth * sinphi, 0.5 * ECM * costh_ii ]
-        pmp = [ 0.5 * ECM, - 0.5 * ECM * sinth * cosphi, - 0.5 * ECM * sinth * sinphi, - 0.5 * ECM * costh_ii ]
+        pmm = [ 0.5 * ECM + np.random.normal(1, 0.05), 0.5 * ECM * sinth * cosphi, 0.5 * ECM * sinth * sinphi, 0.5 * ECM * costh_ii ]
+        pmp = [ 0.5 * ECM + np.random.normal(1, 0.05), - 0.5 * ECM * sinth * cosphi, - 0.5 * ECM * sinth * sinphi, - 0.5 * ECM * costh_ii ]
         data[jj] = np.concatenate((pmm, pmp))
 
         # here one can either analyze the
