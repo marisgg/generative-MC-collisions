@@ -27,21 +27,30 @@ class VAE(nn.Module):
         self.input_dim = input_dim
         self.device = device
 
-    def encode(self, input):
-        z = self.activation(self.e1(input))
-        z = self.activation(self.e2(z))
-        return z
-
 
     def forward(self, input):
-        z = self.encode(input)
+        z = self.activation(self.e1(input))
+        z = self.activation(self.e2(z))
 
         mean = self.mean(z)
         # Clamped for numerical stability 
         log_std = self.log_std(z).clamp(-4, 15)
         std = torch.exp(log_std)
         z = mean + std * torch.randn_like(std)
-        u = self.decode(input, z)
+        u = self.decode(z)
+
+        return u, mean, std
+
+    def forward_old(self, input):
+        z = self.activation(self.e1(input))
+        z = self.activation(self.e2(z))
+
+        mean = self.mean(z)
+        # Clamped for numerical stability 
+        log_std = self.log_std(z).clamp(-4, 15)
+        std = torch.exp(log_std)
+        z = mean + std * torch.randn_like(std)
+        u = self.decode_old(input, z)
 
         return u, mean, std
 
@@ -52,8 +61,17 @@ class VAE(nn.Module):
         vae_loss = recon_loss + 0.5 * KL_loss
         return vae_loss, recon_loss, KL_loss
 
+    def decode(self, z=None):
+        # When sampling from the VAE, the latent vector is clipped to [-0.5, 0.5]
+        if z is None:
+            z = torch.randn((self.input_dim, self.latent_dim)).to(self.device).clamp(-0.5,0.5)
 
-    def decode(self, input, z=None):
+        a = self.activation(self.d1(z))
+        a = self.activation(self.d2(a))
+        return self.d3(a)
+
+
+    def decode_old(self, input, z=None):
         # When sampling from the VAE, the latent vector is clipped to [-0.5, 0.5]
         if z is None:
             z = torch.randn((self.input_dim, self.latent_dim)).to(self.device).clamp(-0.5,0.5)
