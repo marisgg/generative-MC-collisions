@@ -142,8 +142,8 @@ chi1 = kappa * hats * ( hats - MZ**2 ) / (  (hats-MZ**2)**2 + GAMMAZ**2*MZ**2 )
 chi2 = kappa**2 * hats**2 / (  (hats-MZ**2)**2 + GAMMAZ**2*MZ**2 )
 A0 = 1 + 2 * CV**2 * chi1 + (CA**2 + CV**2)**2 * chi2  # see notes
 A1 = 4 * CA**2 * chi1 + 8 * CA**2 * CV**2 * chi2 
-print ('analytical value:')
-print ('total cross section =', 4 * math.pi * alpha**2 * A0 * pb_convert/ 3. / hats, 'pb')
+print('analytical value:')
+print('total cross section =', 4 * math.pi * alpha**2 * A0 * pb_convert/ 3. / hats, 'pb')
 
 ## now that we have the maximum, we can generate "events"
 ## in this simple case, we only have one parameter, costh
@@ -167,10 +167,13 @@ sin_phi = []
 
 data = np.zeros((Neve, 8))
 
+def dispersion(p):
+    E, px, py, pz = p
+    return E**2 - px**2 - py**2 - pz**2
+
 while jj < Neve:
     # random costheta
     costh_ii = -1 + random.random() * delta
-    costh_ii = np.cos(np.arccos(costh_ii) + np.random.normal(1, 0.1))
     # calc. phase space point
     w_ii = dsigma(costh_ii) * delta
     # now divide by maximum and compare to probability
@@ -182,14 +185,28 @@ while jj < Neve:
         # here we create the four-vectors of the hard process particles
         # generate random phi
         phi = random.random() * 2 * math.pi
-        phi += np.random.normal(1, 0.1)
+
         sinphi = math.sin(phi)
         cosphi = math.cos(phi)
         sinth = math.sqrt( 1 - costh_ii**2 )
-        pem = [ 0.5 * ECM, 0., 0., 0.5 * ECM ]
-        pep = [ 0.5 * ECM, 0., 0., - 0.5 * ECM ]
-        pmm = [ 0.5 * ECM + np.random.normal(1, 0.05), 0.5 * ECM * sinth * cosphi, 0.5 * ECM * sinth * sinphi, 0.5 * ECM * costh_ii ]
-        pmp = [ 0.5 * ECM + np.random.normal(1, 0.05), - 0.5 * ECM * sinth * cosphi, - 0.5 * ECM * sinth * sinphi, - 0.5 * ECM * costh_ii ]
+
+
+        pmm = [ 0.5 * ECM, 0.5 * ECM * sinth * cosphi, 0.5 * ECM * sinth * sinphi, 0.5 * ECM * costh_ii ]
+        pmp = [ 0.5 * ECM, - 0.5 * ECM * sinth * cosphi, - 0.5 * ECM * sinth * sinphi, - 0.5 * ECM * costh_ii ]
+        # SMEARING
+        phi *= np.random.normal(1, 0.1) # * 2 * math.pi
+        ECM_2 = ECM * np.random.normal(1, 0.05) # * ECM
+        costh_ii = np.cos(np.arccos(costh_ii) * np.random.normal(1, 0.1))
+
+        sinphi = math.sin(phi)
+        cosphi = math.cos(phi)
+        sinth = math.sqrt( 1 - costh_ii**2 )
+
+        pem = [ 0.5 * ECM_2, 0., 0., 0.5 * ECM_2 ]
+        pep = [ 0.5 * ECM_2, 0., 0., - 0.5 * ECM_2 ]
+        pmm = [ 0.5 * ECM_2, 0.5 * ECM_2 * sinth * cosphi, 0.5 * ECM_2 * sinth * sinphi, 0.5 * ECM_2 * costh_ii ]
+        pmp = [ 0.5 * ECM_2, - 0.5 * ECM_2 * sinth * cosphi, - 0.5 * ECM_2 * sinth * sinphi, - 0.5 * ECM_2 * costh_ii ]
+
         data[jj] = np.concatenate((pmm, pmp))
 
         # here one can either analyze the
@@ -217,4 +234,4 @@ generate_histo(cosths, f'ee-costheta-{ECM}-{Neve}')
 generate_histo(cosphis, f'ee-cosphi-{ECM}-{Neve}')
 generate_histo(sinths, f'ee-sintheta-{ECM}-{Neve}')
 generate_histo(sinphis, f'ee-sinphi-{ECM}-{Neve}')
-np.savetxt("data/events.txt", data_plus)
+np.savetxt("data/events_smear.txt", data_plus)
